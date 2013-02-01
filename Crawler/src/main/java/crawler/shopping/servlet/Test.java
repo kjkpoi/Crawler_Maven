@@ -1,5 +1,7 @@
 package crawler.shopping.servlet;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -10,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import crawler.shopping.http.HttpGetRequest;
+import crawler.shopping.parser.SixPm;
 
 /**
  * Servlet implementation class Test3
@@ -30,10 +33,18 @@ public class Test extends HttpServlet {
 	 * @see HttpServlet#service(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpGetRequest get = new HttpGetRequest();
+		
+		SixPm sixPm = new SixPm();
+		sixPm.run();
+		
+		/*HttpGetRequest get = new HttpGetRequest();
 		PrintWriter out = response.getWriter();
-		out.println(get.getHttpRequest("http://us.topshop.com/webapp/wcs/stores/servlet/ProductDisplay?beginIndex=1&viewAllFlag=&catalogId=33060&storeId=13052&productId=6719578&langId=-1&sort_field=Relevance&categoryId=208634&parent_categoryId=208580&pageSize=20"));
-		out.close();
+		String str;
+		str = get.getHttpRequest("http://www.shopstyle.com/action/apiVisitRetailer?pid=sugar&id=350012307");
+		BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\text.txt"));
+		writer.write(str);
+		writer.close();
+		out.close();*/
 	}
 
 	/**
