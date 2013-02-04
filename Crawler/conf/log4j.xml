@@ -30,9 +30,9 @@
 	
 	
 	<!-- Login Logger -->
-	<logger name="net.daum.adcrawler.servlet.Login" additivity="true">
+	<logger name="crawler.shopping" additivity="true">
 		<level value="INFO" />
-		<appender-ref ref="Login_File_Appender" />
+		<appender-ref ref="All_Appender" />
 	</logger>
 	
 	 <!-- Project Root Logger -->

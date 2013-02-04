@@ -46,7 +46,7 @@ import crawler.shopping.data.XmlData;
 import crawler.shopping.db.MySqlConnector;
 
 
-public class SixPm implements ParserImpl {
+public class Asos implements ParserImpl {
 
 	private Logger log = Logger.getLogger(this.getClass());
 	private Map<String, String> httpParams;
@@ -54,39 +54,27 @@ public class SixPm implements ParserImpl {
 	
 	private final int REPEAT_COUNT = 5;
 	
-	public SixPm() {
+	public Asos() {
 		httpParams = new HashMap<String, String>();
 	}
 	
-	JSONArray getJsonArray(String html, String name) {
-		int start = html.indexOf(name + " = ") + name.length() + " = ".length();
-		int end = html.indexOf(";", start);
-		String jsonString = html.substring(start, end);
-		if(!jsonString.startsWith("["))
-			jsonString = "[" + jsonString;
-		if(!jsonString.endsWith("]"))
-			jsonString += "]";
-		jsonString = "{html = " + jsonString + "}";
-		JSONObject json = (JSONObject) JSONSerializer.toJSON(jsonString);
-		
-		JSONArray result =  (JSONArray) json.get("html");
-		
-		return result;
-	}
 	
 	@Override
 	public String getProductName(String html){
 		NodeList nodeList = this.rootNodeList;
 		NodeFilter spanFilter = new TagNameFilter("meta");
-		HasAttributeFilter attributeFilter = new HasAttributeFilter("property");
+		HasAttributeFilter attributeFilter = new HasAttributeFilter("name");
 		attributeFilter.setAttributeValue("og:title");
 		nodeList = nodeList.extractAllNodesThatMatch(new AndFilter(spanFilter, attributeFilter), true);
 		MetaTag meta = (MetaTag) nodeList.elementAt(0);
+		if(meta == null)
+			return null;
 		return meta.getAttribute("content");
 	}
 	
 	public boolean isAvailable(String html){
-		if(html.contains("We are not able to find the page you requested...") == true){
+		
+		if(html.contains("Whoops! We couldn't find the pages you were looking for.") == true || html.contains("WE COULDN'T FIND THE PAGE YOU WERE LOOKING FOR")){
 			return false;
 		}
 		return true;
@@ -94,7 +82,7 @@ public class SixPm implements ParserImpl {
 	
 	@Override
 	public void run(XmlData xmlData, String startDate) {
-		
+
 		MySqlConnector mysqlConnector = new MySqlConnector();
 		Connection sqlConnection = mysqlConnector.getConnection();
 		PreparedStatement pstmt = null;
@@ -111,174 +99,89 @@ public class SixPm implements ParserImpl {
 		
 		log.info(html);
 		
-		if(isAvailable(html) == false || getProductName(html) == null){
-			String sql = "insert into shopping(product_id, retailer, brand, isAvailable, start_date) values (?, ?, ?, ?, ?)";
-			try {
-				pstmt = sqlConnection.prepareStatement(sql);
-				pstmt.setString(1, xmlData.getId());
-				pstmt.setString(2, xmlData.getRetailer());
-				pstmt.setString(3, xmlData.getBrand());
-				pstmt.setString(4, "false");
-				pstmt.setString(5, startDate);
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				log.error(e.toString());
-				e.printStackTrace();
-			}
-			
-			try {
-				pstmt.close();
-			} catch (SQLException e) {
-				log.error(e.toString());
-				e.printStackTrace();
-			}
-
-			return;
-		}
-		
-		
 		String productName = getProductName(html);
-				
-		JSONArray stock = getJsonArray(html, "stockJSON");
-		JSONObject color = getJsonArray(html, "colorNames").getJSONObject(0);
-		JSONObject size = getJsonArray(html, "valueIdToNameJSON").getJSONObject(0);
 		
-		JSONObject price = getJsonArray(html, "colorPrices").getJSONObject(0);
-		JSONObject dimension = getJsonArray(html, "dimensionIdToNameJson").getJSONObject(0);
-		String sizeCode = null;
-		Iterator<String> dimensionIt = dimension.keys();
+		int start = 0, index, end;
+		String var = "arrSzeCol_ctl00_ContentMainPage_ctlSeparateProduct[";
+		String sql = "insert into shopping(product_id, retailer, brand, product_name, original_price, discounted_price, size, color, quantity, isAvailable, start_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		
-		while(dimensionIt.hasNext()){
-			String dimensionKey = dimensionIt.next();
-			String dimensionValue = dimension.getString(dimensionKey);
-			if(dimensionValue.contentEquals("size") == true){
-				sizeCode = dimensionKey;
+		while(true){
+			index = html.indexOf(var, start);
+			if(index == -1)
 				break;
-			}
-		}
-		
-		JSONObject sizeArray = getJsonArray(html, "dimToUnitToValJSON").getJSONObject(0);
-		sizeArray = (JSONObject) sizeArray.getJSONObject(sizeCode);
-		JSONArray sizeList = new JSONArray();
-		if(sizeArray.size() != 0){
-			Collection<JSONArray> c = sizeArray.values();
-			sizeList = new ArrayList<JSONArray>(c).get(0);
-		}
-
-		Iterator<String> colorIt = color.keys();
-		//Iterator<String> sizeIt = size.keys();
-		Set<String> stockSet = new HashSet<>();
-		
-		String sql = "insert into shopping(product_id, retailer, brand, product_name, original_price, discounted_price, size, color, quantity,isAvailable, start_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-		for(int i = 0; i < stock.size(); i++){
-			JSONObject stockObj = stock.getJSONObject(i);
-			String colorKey = stockObj.getString("color");
-			String sizeKey = null;
-			if(stockObj.containsKey(sizeCode) == true)
-				sizeKey = stockObj.getString(sizeCode);
+			start = html.indexOf("(", index + var.length());
+			start++;
+			end = html.indexOf(");", start);
+			String value = html.substring(start, end);
+			System.out.println(value);
+			int s = 0;
+			int i = 0;
+			int e = 0;
 			
-			if((color.containsKey(colorKey) == false) || (sizeKey != null && size.containsKey(sizeKey) == false))
-				continue;
-			stockSet.add(colorKey + sizeKey);
+			boolean available;
+			String size, color, discountPrice, price;
+			e = value.indexOf(",", s);
+			s = e + 1;
+			e = value.indexOf(",", s);
+			size = value.substring(s, e);
+			size = size.replaceAll("\"", "");
 			
-			//db insert
+			s = e + 1;
+			e = value.indexOf(",", s);
+			color = value.substring(s, e);
+			color = color.replaceAll("\"", "");
+			
+			s = e + 1;
+			e = value.indexOf(",", s);
+			if(value.substring(s, e).contains("True"))
+				available = true;
+			else
+				available = false;
+			
+			s = e + 1;
+			e = value.indexOf(",", s);
+			s = e + 1;
+			e = value.indexOf(",", s);
+			discountPrice = value.substring(s, e);
+			discountPrice = discountPrice.replaceAll("\"", "");
+			
+			s = e + 1;
+			e = value.indexOf(",", s);
+			price = value.substring(s, e);
+			price = price.replaceAll("\"", "");
+			
 			try {
 				pstmt = sqlConnection.prepareStatement(sql);
 				pstmt.setString(1, xmlData.getId());
 				pstmt.setString(2, xmlData.getRetailer());
 				pstmt.setString(3, xmlData.getBrand());
 				pstmt.setString(4, productName);
-				
-				//price
-				JSONObject priceObj = price.getJSONObject(colorKey);
-				
-				pstmt.setString(5, priceObj.getString("wasInt"));
-				pstmt.setString(6, priceObj.getString("nowInt"));
-				if(sizeKey != null){
-					JSONObject sizeObj = size.getJSONObject(sizeKey);
-					pstmt.setString(7, sizeObj.getString("value"));
-				} else{
-					pstmt.setNull(7, java.sql.Types.VARCHAR);
-				}
-				pstmt.setString(8, color.getString(colorKey));
-				if(stockObj.containsKey("onHand") == true)
-					pstmt.setString(9, stockObj.getString("onHand"));
+				pstmt.setString(5, price);
+				pstmt.setString(6, discountPrice);
+				pstmt.setString(7, size);
+				pstmt.setString(8, color);
+				pstmt.setString(9, "0");
+				if(available)
+					pstmt.setString(10, "true");
 				else
-					pstmt.setNull(9, java.sql.Types.VARCHAR);
-				pstmt.setString(10, "true");
+					pstmt.setString(10, "false");
 				pstmt.setString(11, startDate);
 				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				log.error(e.toString());
-				e.printStackTrace();
-			} 
-			
+			} catch (SQLException e1) {
+				log.error(e1.toString());
+				e1.printStackTrace();
+			}
+
 		}
+		
 		try {
 			pstmt.close();
 		} catch (SQLException e) {
 			log.error(e.toString());
 			e.printStackTrace();
 		}
-		
-		
-		while (colorIt.hasNext()) {
-			String colorKey = colorIt.next();
-			String colorValue = color.getString(colorKey);
-
-			if (sizeList.size() == 0) {
-
-			} else {
-				for (int i = 0; i < sizeList.size(); i++) {
-					String sizeKey = sizeList.getString(i);
-					String sizeValue = size.getString(sizeKey);
-					if (!stockSet.contains(colorKey + sizeKey)) {
-						sql = "insert into shopping(product_id, retailer, brand, product_name, original_price, discounted_price, size, color, quantity,isAvailable, start_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-						try {
-							pstmt = sqlConnection.prepareStatement(sql);
-							pstmt.setString(1, xmlData.getId());
-							pstmt.setString(2, xmlData.getRetailer());
-							pstmt.setString(3, xmlData.getBrand());
-							pstmt.setString(4, productName);
-
-							// price
-							JSONObject priceObj = price.getJSONObject(colorKey);
-
-							pstmt.setString(5, priceObj.getString("wasInt"));
-							pstmt.setString(6, priceObj.getString("nowInt"));
-							if (sizeKey != null) {
-								JSONObject sizeObj = size
-										.getJSONObject(sizeKey);
-								pstmt.setString(7, sizeObj.getString("value"));
-							} else {
-								pstmt.setNull(7, java.sql.Types.VARCHAR);
-							}
-							pstmt.setString(8, color.getString(colorKey));
-
-							pstmt.setString(9, "0");
-							pstmt.setString(10, "noStock");
-							pstmt.setString(11, startDate);
-							pstmt.executeUpdate();
-						} catch (SQLException e) {
-							log.error(e.toString());
-							e.printStackTrace();
-						}
-
-					}
-
-					try {
-						pstmt.close();
-					} catch (SQLException e) {
-						log.error(e.toString());
-						e.printStackTrace();
-					}
-
-				}
-			}
-		}	
-		
 	}
+	
 	
 	public void addHttpParams(String key, String value){
 		httpParams.put(key, value);
