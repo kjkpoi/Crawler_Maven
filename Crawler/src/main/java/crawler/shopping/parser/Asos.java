@@ -7,17 +7,9 @@ import java.net.SocketTimeoutException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -33,10 +25,8 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
-import org.htmlparser.Tag;
 import org.htmlparser.filters.AndFilter;
 import org.htmlparser.filters.HasAttributeFilter;
-import org.htmlparser.filters.HasParentFilter;
 import org.htmlparser.filters.TagNameFilter;
 import org.htmlparser.tags.MetaTag;
 import org.htmlparser.util.NodeList;
