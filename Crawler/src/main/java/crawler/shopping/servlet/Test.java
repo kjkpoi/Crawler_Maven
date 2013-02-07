@@ -1,9 +1,6 @@
 package crawler.shopping.servlet;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,10 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import crawler.shopping.data.XmlData;
-import crawler.shopping.http.HttpGetRequest;
-import crawler.shopping.parser.Asos;
 import crawler.shopping.parser.ParserImpl;
-import crawler.shopping.parser.SixPm;
 import crawler.shopping.parser.XmlProductParser;
 import crawler.shopping.utils.ShoppingMallList;
 
@@ -31,7 +25,7 @@ import crawler.shopping.utils.ShoppingMallList;
 @WebServlet(description = "Test", urlPatterns = { "/Test" })
 public class Test extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private final int NUMBER = 14;
+	private final int NUMBER = 16;
 	private Logger log = Logger.getLogger(this.getClass());
     /**
      * @see HttpServlet#HttpServlet()
