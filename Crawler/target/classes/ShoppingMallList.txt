@@ -16,8 +16,8 @@ BergdorfGoodman
 Gymboree
 Topshop
 shoes.com
-Planet Blue
-Saks Fifth Avenue
+PlanetBlue
+SaksFifthAvenue
 Target
 Nine West
 Nike
@@ -26,7 +26,7 @@ Nordstrom
 Dillard
 Puma
 Old Navy
-Revolve Clothing
+RevolveClothing
 Gap
 Footcandy
 Forzieri

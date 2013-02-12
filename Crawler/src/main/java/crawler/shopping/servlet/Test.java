@@ -25,7 +25,7 @@ import crawler.shopping.utils.ShoppingMallList;
 @WebServlet(description = "Test", urlPatterns = { "/Test" })
 public class Test extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private final int NUMBER = 16;
+	private final int NUMBER = 29;
 	private Logger log = Logger.getLogger(this.getClass());
     /**
      * @see HttpServlet#HttpServlet()
